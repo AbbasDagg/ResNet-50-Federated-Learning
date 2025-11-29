@@ -1,8 +1,8 @@
 ### Description:
     "description" 
     
-### Changes:
-    "critical changes that the team should know. N/A"
+### Related Issues:
+    "list of related issues (closes,fixes...)"
 
 ### Tests:
     "how you tested your pr"
