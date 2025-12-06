@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 data_path = './data'
 
-def split_cifar10_data(num_clients: int = 4)-> tuple[list[DataLoader], datasets.CIFAR10]:
+def split_cifar10_data(num_clients: int = 4)-> tuple[list[DataLoader], DataLoader]:
     """Splits CIFAR-10 data among a specified number of clients.
 
     Args:
@@ -40,4 +40,6 @@ def split_cifar10_data(num_clients: int = 4)-> tuple[list[DataLoader], datasets.
             shuffle=True
         )
         client_loaders.append(loader)
-    return client_loaders, test_dataset
+
+    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+    return client_loaders, test_loader
