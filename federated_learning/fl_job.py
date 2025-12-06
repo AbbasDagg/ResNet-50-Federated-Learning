@@ -2,9 +2,9 @@ from RESNET_50 import get_resnet50_model
 
 from nvflare.app_opt.pt.job_config.fed_avg import FedAvgJob
 from nvflare.job_config.script_runner import ScriptRunner
-from split_data import split_cifar10_data
 import os
 import argparse
+from split_data import split_cifar10_data
 
 def federated_learning_arg_parser()-> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Federated Learning with NVFlare and PyTorch")
@@ -18,18 +18,20 @@ def federated_learning_arg_parser()-> argparse.Namespace:
 
 
 def runner():
+    print("Starting Federated Learning Job...")
     fl_args = federated_learning_arg_parser()
     n_clients = fl_args.n_clients
     num_rounds = fl_args.num_rounds
-    client_loaders, test_loader = split_cifar10_data(num_clients=n_clients)
-    train_script = "src/client.py"
+    split_cifar10_data(num_clients=n_clients)
+    train_script = "federated_learning/client.py"
 
     job = FedAvgJob(name="fedavg", n_clients=n_clients, num_rounds=num_rounds, initial_model=get_resnet50_model())
-    
+    print("FedAvgJob created.")
     # Add clients
     for i in range(n_clients):
+        print(f"Adding client site-{i+1}")
         executor = ScriptRunner(
-            script=train_script, script_args=f"--train_data {client_loaders[i]} --test_data {test_loader}"
+            script=train_script, script_args=f"--client_id site-{i+1}"
         )
         job.to(executor, f"site-{i + 1}")
 

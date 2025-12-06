@@ -6,13 +6,12 @@ from torch.utils.data import DataLoader
 import argparse
 import nvflare.client as flare
 import os
-
+from split_data import get_client_data_loader
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--train_data', type=DataLoader, required=True)
-    parser.add_argument('--test_data', type=DataLoader, required=True)
+    parser.add_argument('client_id', type=str, required=True, help='Client identifier')
     parser.add_argument('--lr', type=float, default=0.01, help='Learning rate')
     parser.add_argument('--epochs', type=int, default=1, help='Number of training epochs')
     parser.add_argument("--model_path", type=str, default=f"{os.getcwd}/cifar_net.pth", help="Path to save/load the model")
@@ -21,12 +20,12 @@ def get_args():
 
 def main(args: argparse.Namespace):
     # get local parameters
-    train_loader = args.train_data
-    test_loader = args.test_data
     lr = args.lr
     epochs = args.epochs
     model_path = args.model_path
-
+    client_id = args.client_id
+    train_loader, test_loader = get_client_data_loader(client_id)
+    print(f"{lr}, {epochs}, {model_path}, {client_id}")
     resnet = get_resnet50_model().to(DEVICE)
     def evaluate(input_weights):
         resnet50 = get_resnet50_model()

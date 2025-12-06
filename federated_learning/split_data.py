@@ -4,9 +4,10 @@ from torch.utils.data import random_split
 import torchvision.datasets as datasets
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
+import re
 data_path = './data'
-
-def split_cifar10_data(num_clients: int = 4)-> tuple[list[DataLoader], DataLoader]:
+CLIENT_LOADERS, TEST_LOADER = None, None
+def split_cifar10_data(num_clients: int = 4)-> None:
     """Splits CIFAR-10 data among a specified number of clients.
 
     Args:
@@ -15,6 +16,7 @@ def split_cifar10_data(num_clients: int = 4)-> tuple[list[DataLoader], DataLoade
         tuple[list[DataLoader], datasets.CIFAR10]: A tuple containing a list of DataLoaders for each client and the test dataset.
         test dataset will be common for all clients.
     """
+    global CLIENT_LOADERS, TEST_LOADER
     transform_train = transforms.Compose([
         transforms.RandomHorizontalFlip(),
         transforms.RandomCrop(32, padding=4),
@@ -42,4 +44,10 @@ def split_cifar10_data(num_clients: int = 4)-> tuple[list[DataLoader], DataLoade
         client_loaders.append(loader)
 
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
-    return client_loaders, test_loader
+
+    CLIENT_LOADERS, TEST_LOADER = split_cifar10_data(num_clients=4)
+
+
+def get_client_data_loader(client_id: str)-> tuple[DataLoader, DataLoader]:
+    indx = int(re.search(r'site-(\d+)', client_id).group(1)) - 1
+    return CLIENT_LOADERS[indx], TEST_LOADER
