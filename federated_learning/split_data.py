@@ -45,7 +45,8 @@ def split_cifar10_data(num_clients: int = 4)-> None:
 
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
-    CLIENT_LOADERS, TEST_LOADER = split_cifar10_data(num_clients=4)
+    CLIENT_LOADERS, TEST_LOADER = client_loaders, test_loader
+    print(f"Data split among {num_clients} clients.")
 
 
 def get_client_data_loader(client_id: str)-> tuple[DataLoader, DataLoader]:
