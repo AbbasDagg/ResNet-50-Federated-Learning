@@ -9,9 +9,10 @@ then install the requirements using:
 ```bash
 pip install -r requirements.txt
 ```
-**Note** if you are running with cuda maybe you need to install torch with cuda check the oficial [wibsite](https://pytorch.org/get-started/locally/) for more info.
+**Note** if you are running with cuda you may need to install torch with cuda, check the oficial [website](https://pytorch.org/get-started/locally/) for more info.
 
 To run the main code run the main file [fl_job.py](federated_learning/fl_job.py)
 ```bash
 python federated_learning/fl_job.py
 ```
+
