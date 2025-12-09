@@ -5,6 +5,8 @@ from nvflare.job_config.script_runner import ScriptRunner
 import os
 import argparse
 from split_data import split_cifar10_data
+from nvflare.job_config.api import FedJob
+from fedavg2 import FedAvgV2
 
 def federated_learning_arg_parser()-> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Federated Learning with NVFlare and PyTorch")
@@ -37,6 +39,9 @@ def runner():
 
     file_path = os.path.abspath(__file__)
     workspace_path = os.path.dirname(os.path.dirname(file_path)) + "/workspace"
+    job_config_dir = "./workspace/"
+    print("job-config is at ", os.path.join(job_config_dir, "fedavg"))
+
     job.simulator_run(workspace=workspace_path)
 
 if __name__ == "__main__":

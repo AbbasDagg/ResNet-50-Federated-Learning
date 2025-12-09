@@ -11,25 +11,29 @@ DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('client_id', type=str, required=True, help='Client identifier')
+    parser.add_argument('--client_id', type=str, required=True, help='Client identifier')
+    parser.add_argument('--num_clients', type=int, default=4, help='Number of clients')
     parser.add_argument('--lr', type=float, default=0.01, help='Learning rate')
     parser.add_argument('--epochs', type=int, default=1, help='Number of training epochs')
-    parser.add_argument("--model_path", type=str, default=f"{os.getcwd}/cifar_net.pth", help="Path to save/load the model")
+    parser.add_argument("--model_path", type=str, default=f"/home/sami/ResNet-50-Federated-Learning/workspace/cifar_net.pth", help="Path to save/load the model")
     return parser.parse_args()
 
 
 def main(args: argparse.Namespace):
     # get local parameters
+    print("Starting client...")
     lr = args.lr
     epochs = args.epochs
     model_path = args.model_path
     client_id = args.client_id
-    train_loader, test_loader = get_client_data_loader(client_id)
+    train_loader, test_loader = get_client_data_loader(client_id, num_clients=args.num_clients)
+    print("Data loaders obtained.")
     print(f"{lr}, {epochs}, {model_path}, {client_id}")
     resnet = get_resnet50_model().to(DEVICE)
     def evaluate(input_weights):
         resnet50 = get_resnet50_model()
-        resnet50.load_state_dict(input_weights).to(DEVICE)
+        resnet50.load_state_dict(input_weights)
+        resnet50.to(DEVICE)
 
         correct = 0
         total = 0
@@ -53,7 +57,7 @@ def main(args: argparse.Namespace):
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.SGD(resnet.parameters(), lr=lr, momentum=0.9)
 
-        steps = epoch * len(train_loader)
+        steps = epochs * len(train_loader)
         for epoch in range(epochs):
             running_loss = 0.0
             for i, data in enumerate(train_loader, 0):

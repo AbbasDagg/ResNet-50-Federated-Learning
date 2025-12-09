@@ -5,50 +5,52 @@ import torchvision.datasets as datasets
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import re
+from torch.utils.data import DataLoader, Subset
+
 data_path = './data'
-CLIENT_LOADERS, TEST_LOADER = None, None
-def split_cifar10_data(num_clients: int = 4)-> None:
-    """Splits CIFAR-10 data among a specified number of clients.
+def split_cifar10_data(num_clients: int = 4):
+    """Splits CIFAR-10 data among a specified number of clients deterministically.
 
     Args:
-        num_clients (int): The number of clients to split the data for.
+        num_clients (int): Number of clients.
     Returns:
-        tuple[list[DataLoader], datasets.CIFAR10]: A tuple containing a list of DataLoaders for each client and the test dataset.
-        test dataset will be common for all clients.
+        tuple[list[DataLoader], DataLoader]: List of client DataLoaders, and test DataLoader.
     """
-    global CLIENT_LOADERS, TEST_LOADER
+    # Transforms
     transform_train = transforms.Compose([
         transforms.RandomHorizontalFlip(),
         transforms.RandomCrop(32, padding=4),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
-
     transform_test = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
-    train_dataset = datasets.CIFAR10(root=data_path, train=True, download=True, transform=transform_train)
-    test_dataset = datasets.CIFAR10(root=data_path,train=False, download=True, transform=transform_test)
 
-    client_size = len(train_dataset) // num_clients
-    g = torch.Generator().manual_seed(42)
-    clients = random_split(train_dataset, [client_size] * num_clients, generator=g)
+    # Load datasets
+    train_dataset = datasets.CIFAR10(root=data_path, train=True, download=True, transform=transform_train)
+    test_dataset  = datasets.CIFAR10(root=data_path, train=False, download=True, transform=transform_test)
+
+    # Deterministic split
+    N = len(train_dataset)
+    client_size = N // num_clients
+
     client_loaders = []
+
     for i in range(num_clients):
-        loader = DataLoader(
-            clients[i],
-            batch_size=64,
-            shuffle=True
-        )
+        start = i * client_size
+        end = start + client_size
+        subset = Subset(train_dataset, list(range(start, end)))
+        loader = DataLoader(subset, batch_size=64, shuffle=True)
         client_loaders.append(loader)
 
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
 
-    CLIENT_LOADERS, TEST_LOADER = client_loaders, test_loader
-    print(f"Data split among {num_clients} clients.")
+    return client_loaders, test_loader
 
-
-def get_client_data_loader(client_id: str)-> tuple[DataLoader, DataLoader]:
+def get_client_data_loader(client_id: str, num_clients)-> tuple[DataLoader, DataLoader]:
+    client_loaders, test_loader = split_cifar10_data(num_clients=num_clients)
     indx = int(re.search(r'site-(\d+)', client_id).group(1)) - 1
-    return CLIENT_LOADERS[indx], TEST_LOADER
+    print(indx)
+    return client_loaders[indx], test_loader
