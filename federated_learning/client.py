@@ -9,13 +9,13 @@ import os
 from split_data import get_client_data_loader
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-def get_args():
+def get_args(): # TODO: remove hardcoded paths
     parser = argparse.ArgumentParser()
     parser.add_argument('--client_id', type=str, required=True, help='Client identifier')
     parser.add_argument('--num_clients', type=int, default=4, help='Number of clients')
     parser.add_argument('--lr', type=float, default=0.01, help='Learning rate')
     parser.add_argument('--epochs', type=int, default=1, help='Number of training epochs')
-    parser.add_argument("--model_path", type=str, default=f"/home/sami/ResNet-50-Federated-Learning/workspace/cifar_net.pth", help="Path to save/load the model")
+    parser.add_argument("--model_path", type=str, default=f"/home/abbas/ResNet-50-Federated-Learning/workspace/cifar_net.pth", help="Path to save/load the model")
     return parser.parse_args()
 
 
