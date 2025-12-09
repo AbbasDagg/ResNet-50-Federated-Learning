@@ -6,7 +6,6 @@ import os
 import argparse
 from split_data import split_cifar10_data
 from nvflare.job_config.api import FedJob
-from fedavg2 import FedAvgV2
 
 def federated_learning_arg_parser()-> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Federated Learning with NVFlare and PyTorch")
