@@ -5,8 +5,9 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import re
 from torch.utils.data import DataLoader, Subset
+import os
 
-data_path = "./data"
+data_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 
 
 def split_cifar10_data(num_clients: int = 4):
