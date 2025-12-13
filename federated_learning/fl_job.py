@@ -4,7 +4,6 @@ from nvflare.app_opt.pt.job_config.fed_avg import FedAvgJob
 from nvflare.job_config.script_runner import ScriptRunner
 import os
 import argparse
-from split_data import split_cifar10_data
 
 
 def federated_learning_arg_parser() -> argparse.Namespace:
@@ -31,7 +30,6 @@ def runner():
     fl_args = federated_learning_arg_parser()
     n_clients = fl_args.n_clients
     num_rounds = fl_args.num_rounds
-    split_cifar10_data(num_clients=n_clients)
     train_script = "federated_learning/client.py"
 
     job = FedAvgJob(
@@ -49,8 +47,11 @@ def runner():
         )
         job.to(executor, f"site-{i + 1}")
 
+    # Set up workspace directory path
     file_path = os.path.abspath(__file__)
     workspace_path = os.path.dirname(os.path.dirname(file_path)) + "/workspace"
+    if not os.path.exists(workspace_path):
+        os.makedirs(workspace_path)
     print("job-config is at ", workspace_path)
     job.simulator_run(workspace=workspace_path)
 
