@@ -1,3 +1,5 @@
+"""Client code for federated learning using NVFlare and ResNet-50 on CIFAR-10 dataset."""
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
