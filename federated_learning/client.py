@@ -2,10 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from RESNET_50 import get_resnet50_model
-from torch.utils.data import DataLoader
 import argparse
 import nvflare.client as flare
-import os
 from split_data import get_client_data_loader
 
 
@@ -73,7 +71,7 @@ def run_client(args: argparse.Namespace):
         steps = epochs * len(train_loader)
         for epoch in range(epochs):
             running_loss = 0.0
-            for i, data in enumerate(train_loader, 0):
+            for _, data in enumerate(train_loader, 0):
                 inputs, labels = data[0].to(DEVICE), data[1].to(DEVICE)
 
                 optimizer.zero_grad()
