@@ -5,6 +5,7 @@ from RESNET_50 import get_resnet50_model
 import argparse
 import nvflare.client as flare
 from split_data import get_client_data_loader
+import os
 
 
 def get_client_args():
@@ -16,7 +17,7 @@ def get_client_args():
     parser.add_argument(
         "--model_path",
         type=str,
-        default=f"/home/sami/ResNet-50-Federated-Learning/workspace/cifar_net.pth",
+        default="./cifar_net.pth",
         help="Path to save/load the model",
     )
     return parser.parse_args()
