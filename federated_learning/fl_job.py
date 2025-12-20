@@ -65,7 +65,8 @@ def runner():
     for i in range(n_clients):
         print(f"Adding client site-{i+1}")
         executor = ScriptRunner(
-            script=train_script, script_args=f"--client_id site-{i+1}"
+            script=train_script,
+            script_args=f"--client_id site-{i+1} --num_clients {n_clients} --workspace_path {workspace_path}",
         )
         job.to(executor, f"site-{i + 1}")
 
