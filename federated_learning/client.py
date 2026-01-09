@@ -71,7 +71,7 @@ def run_client(args: argparse.Namespace):
                     per_label_acc[label.item()][0] += per_label_correct
                     per_label_acc[label.item()][1] += (labels == label).sum().item()
 
-        return 100 * correct // total, {
+        return 100 * correct / total, {
             k: 100 * (v[0] / max(1, v[1])) for k, v in per_label_acc.items()
         }
 
