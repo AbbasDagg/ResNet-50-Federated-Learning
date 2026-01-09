@@ -6,36 +6,44 @@ import argparse
 import nvflare.client as flare
 from split_data import get_client_data_loader
 
+# from nvflare.client.tracking import SummaryWriter
+from pathlib import Path
+
+# TODO: look at the possibility of using Tensorboard directly
+from torch.utils.tensorboard import SummaryWriter as TBWriter
+
 
 def get_client_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--client_id", type=str, required=True, help="Client identifier")
     parser.add_argument("--num_clients", type=int, default=4, help="Number of clients")
     parser.add_argument("--lr", type=float, default=0.01, help="Learning rate")
-    parser.add_argument("--epochs", type=int, default=1, help="Number of training epochs")
+    parser.add_argument("--epochs", type=int, default=4, help="Number of training epochs")
     parser.add_argument(
-        "--model_path",
-        type=str,
-        default=f"/home/sami/ResNet-50-Federated-Learning/workspace/cifar_net.pth",
-        help="Path to save/load the model",
+        "--workspace_path",
+        type=Path,
+        required=True,
+        help="Path to workspace directory",
     )
     return parser.parse_args()
 
 
 def run_client(args: argparse.Namespace):
     # get local parameters
-    print("Starting client...")
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     lr = args.lr
     epochs = args.epochs
-    model_path = args.model_path
+    workspace_path: Path = args.workspace_path
     client_id = args.client_id
 
+    print(f"Starting {client_id}")
     train_loader, test_loader = get_client_data_loader(
         client_id, num_clients=args.num_clients
     )
     print("Data loaders obtained.")
-    print(f"{DEVICE}, {lr}, {epochs}, {model_path}, {client_id}")
+    print(
+        f"args: client_id={client_id}, num_clients={args.num_clients}, lr={lr}, epochs={epochs}, workspace_path={workspace_path}"
+    )
     resnet = get_resnet50_model()
     criterion = nn.CrossEntropyLoss()
 
@@ -43,7 +51,7 @@ def run_client(args: argparse.Namespace):
         resnet50 = get_resnet50_model()
         resnet50.load_state_dict(input_weights)
         resnet50.to(DEVICE)
-
+        per_label_acc = {}
         correct = 0
         total = 0
         with torch.no_grad():
@@ -55,9 +63,20 @@ def run_client(args: argparse.Namespace):
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
                 correct += (predicted == labels).sum().item()
-        return 100 * correct // total
+                for label in labels.unique():
+                    per_label_correct: int = (
+                        (predicted[labels == label] == label).sum().item()
+                    )
+                    per_label_acc[label.item()] = per_label_acc.get(label.item(), [0, 0])
+                    per_label_acc[label.item()][0] += per_label_correct
+                    per_label_acc[label.item()][1] += (labels == label).sum().item()
+
+        return 100 * correct / total, {
+            k: 100 * (v[0] / max(1, v[1])) for k, v in per_label_acc.items()
+        }
 
     flare.init()
+    summary_writer = TBWriter(log_dir=workspace_path / f"tensorboard_logs/{client_id}")
     while flare.is_running():
         input_model = flare.receive()
         client_id = flare.get_site_name()
@@ -84,10 +103,32 @@ def run_client(args: argparse.Namespace):
             print(
                 f"Client {client_id}, Epoch {epoch+1}, Loss: {running_loss/len(train_loader)}"
             )
-        print(f"({client_id}) Finished Training")
+            training_loss = running_loss / len(train_loader)
 
-        accuracy = evaluate(resnet.state_dict())
-        torch.save(resnet.state_dict(), model_path)
+            training_step = input_model.current_round * epochs + (epoch + 1)
+            summary_writer.add_scalar(
+                tag="local_training_loss",
+                scalar_value=training_loss,
+                global_step=training_step,
+            )
+
+        print(f"({client_id}) - Finished Training")
+
+        accuracy, per_label_accuracy = evaluate(resnet.state_dict())
+        accuracy_step = input_model.current_round + 1
+
+        summary_writer.add_scalar(
+            tag="local_accuracy", scalar_value=accuracy, global_step=accuracy_step
+        )
+        print(f"({client_id}) per_label_accuracy: {per_label_accuracy}")
+        for class_id, acc in per_label_accuracy.items():
+            summary_writer.add_scalar(
+                tag=f"per_label_accuracy/class_{class_id}",
+                scalar_value=acc,
+                global_step=accuracy_step,
+            )
+
+        torch.save(resnet.state_dict(), workspace_path / "cifar_net.pth")
 
         output_model = flare.FLModel(
             params=resnet.cpu().state_dict(),

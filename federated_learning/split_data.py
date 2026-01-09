@@ -1,10 +1,10 @@
-import torch
-from torch.utils.data import random_split
 import torchvision.datasets as datasets
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import re
 from torch.utils.data import DataLoader, Subset
+import numpy as np
+
 
 data_path = "./data"
 
@@ -42,20 +42,24 @@ def split_cifar10_data(num_clients: int = 4):
     )
 
     # Deterministic split
-    N = len(train_dataset)
-    client_size = N // num_clients
+    labels = np.array(train_dataset.targets)
+    client_indices = [[] for _ in range(num_clients)]
 
+    for label in range(10):
+        idx = np.where(labels == label)[0]
+        idx = np.sort(idx)
+        splits = np.array_split(idx, num_clients)
+        for i, s in enumerate(splits):
+            client_indices[i].extend(s.tolist())
+
+    # Create DataLoaders for each client
     client_loaders = []
-
-    for i in range(num_clients):
-        start = i * client_size
-        end = start + client_size
-        subset = Subset(train_dataset, list(range(start, end)))
+    for indices in client_indices:
+        subset = Subset(train_dataset, indices)
         loader = DataLoader(subset, batch_size=64, shuffle=True)
         client_loaders.append(loader)
 
     test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
-
     return client_loaders, test_loader
 
 
