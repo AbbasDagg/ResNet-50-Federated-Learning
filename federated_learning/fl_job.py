@@ -6,6 +6,8 @@ from nvflare.job_config.script_runner import ScriptRunner
 import os
 import argparse
 import torch
+from pathlib import Path
+from dataset.download import download_datasets
 
 
 def federated_learning_arg_parser() -> argparse.Namespace:
@@ -37,14 +39,25 @@ def runner():
     # Setup paths
     file_path = os.path.abspath(__file__)
     workspace_path = os.path.dirname(os.path.dirname(file_path)) + "/workspace"
-    data_path = os.path.join(os.path.dirname(os.path.dirname(file_path)), "data")
+    # Prefer shared temp roots to avoid redundant per-client downloads/writes
+    data_root = os.environ.get("CIFAR10_ROOT", "/tmp/nvflare/data/cifar10")
+    model_root = os.environ.get("NVFLARE_MODEL_ROOT", "/tmp/nvflare/models")
+    Path(data_root).mkdir(parents=True, exist_ok=True)
+    Path(model_root).mkdir(parents=True, exist_ok=True)
     
     if not os.path.exists(workspace_path):
         os.makedirs(workspace_path)
     
+    # Ensure dataset is present once to avoid race conditions
+    try:
+        download_datasets(Path(data_root))
+    except Exception:
+        # If concurrent processes already downloaded, ignore errors
+        pass
+
     # Server evaluation setup
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    test_loader = get_test_loader(data_path)
+    test_loader = get_test_loader(data_root)
     initial_model = get_resnet50_model()
     
     # Evaluate initial model
@@ -62,8 +75,11 @@ def runner():
     # Add clients
     for i in range(n_clients):
         print(f"Adding client site-{i+1}")
+        site_id = f"site-{i+1}"
+        site_model_path = os.path.join(model_root, f"{site_id}_cifar_net.pth")
         executor = ScriptRunner(
-            script=train_script, script_args=f"--client_id site-{i+1}"
+            script=train_script,
+            script_args=f"--client_id {site_id} --data_root {data_root} --model_path {site_model_path}",
         )
         job.to(executor, f"site-{i + 1}")
 

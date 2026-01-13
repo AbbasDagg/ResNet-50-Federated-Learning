@@ -4,15 +4,24 @@ from torch.utils.data import DataLoader
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 from RESNET_50 import get_resnet50_model
+import os
 
 
-def get_test_loader(data_path: str, batch_size: int = 64) -> DataLoader:
+def get_test_loader(data_path: str | None, batch_size: int = 64) -> DataLoader:
     """Load CIFAR-10 test dataset for server evaluation."""
     transform_test = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
-    
+    # Resolve root: prefer provided path, else env var, else project-level
+    if not data_path:
+        data_path = os.environ.get("CIFAR10_ROOT")
+        if not data_path:
+            data_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"
+            )
+    os.makedirs(data_path, exist_ok=True)
+
     test_dataset = datasets.CIFAR10(
         root=data_path, train=False, download=True, transform=transform_test
     )

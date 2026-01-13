@@ -17,8 +17,12 @@ def get_client_args():
     parser.add_argument(
         "--model_path",
         type=str,
-        default="./cifar_net.pth",
-        help="Path to save/load the model",
+        help="Path to save/load the model (optional; defaults to /tmp/nvflare/models/<client_id>_cifar_net.pth)",
+    )
+    parser.add_argument(
+        "--data_root",
+        type=str,
+        help="Root folder for CIFAR10 dataset (optional; env CIFAR10_ROOT also supported)",
     )
     return parser.parse_args()
 
@@ -29,11 +33,17 @@ def run_client(args: argparse.Namespace):
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     lr = args.lr
     epochs = args.epochs
-    model_path = args.model_path
     client_id = args.client_id
+    # Resolve model path: prefer arg, else env NVFLARE_MODEL_ROOT, else /tmp
+    if args.model_path:
+        model_path = args.model_path
+    else:
+        model_root = os.environ.get("NVFLARE_MODEL_ROOT", "/tmp/nvflare/models")
+        os.makedirs(model_root, exist_ok=True)
+        model_path = os.path.join(model_root, f"{client_id}_cifar_net.pth")
 
     train_loader, test_loader = get_client_data_loader(
-        client_id, num_clients=args.num_clients
+        client_id, num_clients=args.num_clients, data_root=args.data_root
     )
     print("Data loaders obtained.")
     print(f"{DEVICE}, {lr}, {epochs}, {model_path}, {client_id}")

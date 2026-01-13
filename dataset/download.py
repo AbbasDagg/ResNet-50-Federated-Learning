@@ -1,8 +1,9 @@
 import argparse
 import torchvision.datasets as datasets
 from pathlib import Path
+import os
 
-Defualt_DATASET_PATH = './data'
+Defualt_DATASET_PATH = os.environ.get('CIFAR10_ROOT', '/tmp/nvflare/data/cifar10')
 
 def arg_parse() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Download Datasets')
