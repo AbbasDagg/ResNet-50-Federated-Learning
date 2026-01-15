@@ -5,14 +5,11 @@ import re
 from torch.utils.data import DataLoader, Subset
 import numpy as np
 
-
-data_path = "./data"
-
-
-def split_cifar10_data(num_clients: int = 4):
+def split_cifar10_data(data_path: str, num_clients: int = 4):
     """Splits CIFAR-10 data among a specified number of clients deterministically.
 
     Args:
+        data_path (str): Root folder containing CIFAR-10 data (downloaded or to be downloaded).
         num_clients (int): Number of clients.
     Returns:
         tuple[list[DataLoader], DataLoader]: List of client DataLoaders, and test DataLoader.
@@ -63,8 +60,12 @@ def split_cifar10_data(num_clients: int = 4):
     return client_loaders, test_loader
 
 
-def get_client_data_loader(client_id: str, num_clients) -> tuple[DataLoader, DataLoader]:
-    client_loaders, test_loader = split_cifar10_data(num_clients=num_clients)
+def get_client_data_loader(
+    client_id: str, num_clients: int, data_path: str
+) -> tuple[DataLoader, DataLoader]:
+    client_loaders, test_loader = split_cifar10_data(
+        data_path=data_path, num_clients=num_clients
+    )
     indx = int(re.search(r"site-(\d+)", client_id).group(1)) - 1
     print(indx)
     return client_loaders[indx], test_loader

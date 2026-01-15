@@ -25,6 +25,12 @@ def get_client_args():
         required=True,
         help="Path to workspace directory",
     )
+    parser.add_argument(
+        "--data_path",
+        type=Path,
+        default=None,
+        help="Path to shared data directory (defaults to workspace_path/../data)",
+    )
     return parser.parse_args()
 
 
@@ -34,15 +40,16 @@ def run_client(args: argparse.Namespace):
     lr = args.lr
     epochs = args.epochs
     workspace_path: Path = args.workspace_path
+    data_path: Path = args.data_path
     client_id = args.client_id
 
     print(f"Starting {client_id}")
     train_loader, test_loader = get_client_data_loader(
-        client_id, num_clients=args.num_clients
+        client_id, num_clients=args.num_clients, data_path=str(data_path)
     )
     print("Data loaders obtained.")
     print(
-        f"args: client_id={client_id}, num_clients={args.num_clients}, lr={lr}, epochs={epochs}, workspace_path={workspace_path}"
+        f"args: client_id={client_id}, num_clients={args.num_clients}, lr={lr}, epochs={epochs}, workspace_path={workspace_path}, data_path={data_path}"
     )
     resnet = get_resnet50_model()
     criterion = nn.CrossEntropyLoss()

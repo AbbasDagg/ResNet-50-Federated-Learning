@@ -35,9 +35,9 @@ def runner():
     train_script = "federated_learning/client.py"
 
     # Setup paths
-    file_path = os.path.abspath(__file__)
-    workspace_path = os.path.dirname(os.path.dirname(file_path)) + "/workspace"
-    data_path = os.path.join(os.path.dirname(os.path.dirname(file_path)), "data")
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    workspace_path = os.path.join(repo_root, "workspace")
+    data_path = os.path.join(repo_root, "data")
 
     if not os.path.exists(workspace_path):
         os.makedirs(workspace_path)
@@ -66,7 +66,7 @@ def runner():
         print(f"Adding client site-{i+1}")
         executor = ScriptRunner(
             script=train_script,
-            script_args=f"--client_id site-{i+1} --num_clients {n_clients} --workspace_path {workspace_path}",
+            script_args=f"--client_id site-{i+1} --num_clients {n_clients} --workspace_path {workspace_path} --data_path {data_path}",
         )
         job.to(executor, f"site-{i + 1}")
 
