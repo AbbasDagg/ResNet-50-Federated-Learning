@@ -1,6 +1,9 @@
+from pathlib import Path
 from RESNET_50 import get_resnet50_model
 from server import get_test_loader, evaluate_global_model
-
+from schema.fl_config import FLConfig, aggregation_methods
+from pydantic import ValidationError
+import yaml
 from nvflare.app_opt.pt.job_config.fed_avg import FedAvgJob
 from nvflare.job_config.script_runner import ScriptRunner
 import os
@@ -13,27 +16,38 @@ def federated_learning_arg_parser() -> argparse.Namespace:
         description="Federated Learning with NVFlare and PyTorch"
     )
     parser.add_argument(
-        "--n_clients",
-        type=int,
-        default=4,
-        help="Number of clients to participate in federated learning",
+        "--config",
+        type=str,
+        required=True,
+        help="Path to the federated learning configuration file",
     )
-    parser.add_argument(
-        "--num_rounds",
-        type=int,
-        default=4,
-        help="Number of communication rounds for federated learning",
-    )
+
     return parser.parse_args()
+
+
+def load_fl_config(config_path: str) -> FLConfig:
+    path = Path(config_path)
+    with path.open("r") as f:
+        config_dict = yaml.safe_load(f) or {}
+    try:
+        fl_config = FLConfig.model_validate(config_dict)
+        return fl_config
+    except ValidationError as e:
+        raise SystemExit(f"Invalid FL config:\n{e}")
 
 
 def runner():
     print("Starting Federated Learning Job...")
     fl_args = federated_learning_arg_parser()
-    n_clients = fl_args.n_clients
-    num_rounds = fl_args.num_rounds
-    train_script = "federated_learning/client.py"
 
+    fl_config = load_fl_config(fl_args.config)
+
+    server_config = fl_config.server
+    n_clients = len(server_config.clients.keys())
+    num_rounds = server_config.num_rounds
+    aggregation_method = server_config.aggregation_method
+
+    clients = fl_config.server.clients
     # Setup paths
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     workspace_path = os.path.join(repo_root, "workspace")
@@ -54,19 +68,22 @@ def runner():
     )
     print(f"Initial Model - Accuracy: {initial_accuracy:.2f}%, Loss: {initial_loss:.4f}")
 
-    job = FedAvgJob(
-        name="fedavg",
+    Agg_method = aggregation_methods[aggregation_method.lower()]
+    job = Agg_method(
+        name=aggregation_method.lower(),
         n_clients=n_clients,
         num_rounds=num_rounds,
         initial_model=initial_model,
     )
-    print("FedAvgJob created.")
+
+    print(f"{aggregation_method.lower()} job created.")
     # Add clients
-    for i in range(n_clients):
-        print(f"Adding client site-{i+1}")
+    train_script = "federated_learning/client.py"
+    for i, (client_id, client_config) in enumerate(clients.items()):
+        print(f"Adding client {client_id}")
         executor = ScriptRunner(
             script=train_script,
-            script_args=f"--client_id site-{i+1} --num_clients {n_clients} --workspace_path {workspace_path} --data_path {data_path}",
+            script_args=f"--client_id site-{i+1} --num_clients {n_clients} --lr {client_config.lr} --batch_size {client_config.batch_size} --epochs {client_config.epochs} --workspace_path {workspace_path} --data_path {data_path}",
         )
         job.to(executor, f"site-{i + 1}")
 
