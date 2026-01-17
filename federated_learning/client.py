@@ -9,16 +9,21 @@ from split_data import get_client_data_loader
 # from nvflare.client.tracking import SummaryWriter
 from pathlib import Path
 
-# TODO: look at the possibility of using Tensorboard directly
 from torch.utils.tensorboard import SummaryWriter as TBWriter
 
 
-def get_client_args():
+def get_client_args() -> argparse.Namespace:
+    """
+    Parse command line arguments for the federated learning client.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("--client_id", type=str, required=True, help="Client identifier")
     parser.add_argument("--num_clients", type=int, default=4, help="Number of clients")
     parser.add_argument("--lr", type=float, default=0.01, help="Learning rate")
-    parser.add_argument("--epochs", type=int, default=4, help="Number of training epochs")
+    parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
+    parser.add_argument(
+        "--epochs", type=int, default=10, help="Number of training epochs"
+    )
     parser.add_argument(
         "--workspace_path",
         type=Path,
@@ -28,13 +33,13 @@ def get_client_args():
     parser.add_argument(
         "--data_path",
         type=Path,
-        default=None,
+        required=True,
         help="Path to shared data directory (defaults to workspace_path/../data)",
     )
     return parser.parse_args()
 
 
-def run_client(args: argparse.Namespace):
+def run_client(args: argparse.Namespace) -> None:
     # get local parameters
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     lr = args.lr
@@ -61,11 +66,14 @@ def run_client(args: argparse.Namespace):
         per_label_acc = {}
         correct = 0
         total = 0
+        total_loss = 0.0
         with torch.no_grad():
             for data in test_loader:
                 images, labels = data[0].to(DEVICE), data[1].to(DEVICE)
                 # calculate outputs by running images through the network
                 outputs = resnet50(images)
+                loss = criterion(outputs, labels)
+                total_loss += loss.item()
                 # the class with the highest energy is what we choose as prediction
                 _, predicted = torch.max(outputs.data, 1)
                 total += labels.size(0)
@@ -77,10 +85,12 @@ def run_client(args: argparse.Namespace):
                     per_label_acc[label.item()] = per_label_acc.get(label.item(), [0, 0])
                     per_label_acc[label.item()][0] += per_label_correct
                     per_label_acc[label.item()][1] += (labels == label).sum().item()
-
-        return 100 * correct / total, {
-            k: 100 * (v[0] / max(1, v[1])) for k, v in per_label_acc.items()
-        }
+        avg_loss = total_loss / len(test_loader)
+        return (
+            100 * correct / total,
+            {k: 100 * (v[0] / max(1, v[1])) for k, v in per_label_acc.items()},
+            avg_loss,
+        )
 
     flare.init()
     summary_writer = TBWriter(log_dir=workspace_path / f"tensorboard_logs/{client_id}")
@@ -121,12 +131,17 @@ def run_client(args: argparse.Namespace):
 
         print(f"({client_id}) - Finished Training")
 
-        accuracy, per_label_accuracy = evaluate(resnet.state_dict())
+        accuracy, per_label_accuracy, avg_loss = evaluate(resnet.state_dict())
         accuracy_step = input_model.current_round + 1
 
+        # log metrics to TensorBoard
         summary_writer.add_scalar(
             tag="local_accuracy", scalar_value=accuracy, global_step=accuracy_step
         )
+        summary_writer.add_scalar(
+            tag="local_test_loss", scalar_value=avg_loss, global_step=accuracy_step
+        )
+
         print(f"({client_id}) per_label_accuracy: {per_label_accuracy}")
         for class_id, acc in per_label_accuracy.items():
             summary_writer.add_scalar(
