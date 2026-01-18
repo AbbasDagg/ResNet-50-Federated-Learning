@@ -1,0 +1,8 @@
+server:
+  num_rounds: 100
+  aggregation_method: "fedavg"
+  clients:
+    client_1: {}
+    client_2: {}
+    client_3: {}  
+    client_4: {}
