@@ -5,3 +5,4 @@ torchvision
 pathlib
 tensorboard
 pydantic
+PyYAML

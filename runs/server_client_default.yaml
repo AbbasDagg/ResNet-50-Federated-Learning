@@ -1,5 +1,5 @@
 server:
-  num_rounds: 110
+  num_rounds: 100
   aggregation_method: "fedavg"
   clients:
     client_1: {}
