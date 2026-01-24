@@ -6,9 +6,11 @@ aggregation_methods = {"fedavg": FedAvgJob}
 
 
 class Client(BaseModel):
-    lr: float = 0.01
-    epochs: int = 5
+    lr: float = 0.03
+    epochs: int = 6
     batch_size: int = 64
+    use_lr_scheduler: bool = True
+    lr_min: float = 0.001
 
 
 class Server(BaseModel):

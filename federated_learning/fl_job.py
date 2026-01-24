@@ -94,7 +94,17 @@ def runner():
         print(f"Adding client {client_id}")
         executor = ScriptRunner(
             script=train_script,
-            script_args=f"--client_id site-{i+1} --num_clients {n_clients} --lr {client_config.lr} --batch_size {client_config.batch_size} --epochs {client_config.epochs} --workspace_path {run_path} --data_path {data_path}",
+            script_args=(
+                f"--client_id site-{i+1} "
+                f"--num_clients {n_clients} "
+                f"--lr {client_config.lr} "
+                f"--lr_min {client_config.lr_min} "
+                f"--batch_size {client_config.batch_size} "
+                f"--epochs {client_config.epochs} "
+                f"--use_lr_scheduler {str(client_config.use_lr_scheduler)} "
+                f"--workspace_path {run_path} "
+                f"--data_path {data_path}"
+            ),
         )
         job.to(executor, f"site-{i + 1}")
 

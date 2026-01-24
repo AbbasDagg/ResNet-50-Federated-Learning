@@ -20,9 +20,20 @@ def get_client_args() -> argparse.Namespace:
     parser.add_argument("--client_id", type=str, required=True, help="Client identifier")
     parser.add_argument("--num_clients", type=int, default=4, help="Number of clients")
     parser.add_argument("--lr", type=float, default=0.01, help="Learning rate")
+    parser.add_argument(
+        "--lr_min",
+        type=float,
+        default=0.001,
+        help="Minimum learning rate for LR scheduler",
+    )
     parser.add_argument("--batch_size", type=int, default=64, help="Batch size")
     parser.add_argument(
         "--epochs", type=int, default=10, help="Number of training epochs"
+    )
+    parser.add_argument(
+        "--use_lr_scheduler",
+        type=str,
+        help="Whether to use learning rate scheduler",
     )
     parser.add_argument(
         "--workspace_path",
@@ -42,11 +53,14 @@ def get_client_args() -> argparse.Namespace:
 def run_client(args: argparse.Namespace) -> None:
     # get local parameters
     DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {DEVICE}")
     lr = args.lr
     epochs = args.epochs
     workspace_path: Path = args.workspace_path
     data_path: Path = args.data_path
     client_id = args.client_id
+    lr_min = args.lr_min
+    use_lr_scheduler = True if args.use_lr_scheduler.lower() == "true" else False
 
     print(f"Starting {client_id}")
     train_loader, test_loader = get_client_data_loader(
@@ -54,7 +68,7 @@ def run_client(args: argparse.Namespace) -> None:
     )
     print("Data loaders obtained.")
     print(
-        f"args: client_id={client_id}, num_clients={args.num_clients}, lr={lr}, epochs={epochs}, workspace_path={workspace_path}, data_path={data_path}"
+        f"args: client_id={client_id}, num_clients={args.num_clients}, lr={lr}, lr_min={lr_min}, use_lr_scheduler={use_lr_scheduler}, epochs={epochs}, workspace_path={workspace_path}, data_path={data_path}"
     )
     resnet = get_resnet50_model()
     criterion = nn.CrossEntropyLoss()
@@ -92,8 +106,8 @@ def run_client(args: argparse.Namespace) -> None:
             avg_loss,
         )
 
-    flare.init()
     summary_writer = TBWriter(log_dir=workspace_path / f"tensorboard_logs/{client_id}")
+    flare.init()
     while flare.is_running():
         input_model = flare.receive()
         client_id = flare.get_site_name()
@@ -102,7 +116,19 @@ def run_client(args: argparse.Namespace) -> None:
         )
         resnet.load_state_dict(input_model.params)
         resnet.to(DEVICE)
-        optimizer = optim.SGD(resnet.parameters(), lr=lr, momentum=0.9)
+        optimizer = optim.SGD(resnet.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4)
+        optimizer.param_groups[0]["initial_lr"] = lr
+
+        if use_lr_scheduler:
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer,
+                T_max=input_model.total_rounds,
+                last_epoch=input_model.current_round - 1,
+                eta_min=lr_min,
+            )
+            if input_model.current_round > 0:
+                scheduler.step()
+            print(f"Current lr: {optimizer.param_groups[0]['lr']}")
 
         steps = epochs * len(train_loader)
         for epoch in range(epochs):
