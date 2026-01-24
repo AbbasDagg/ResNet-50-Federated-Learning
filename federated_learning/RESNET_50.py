@@ -202,7 +202,6 @@ class ResNet(nn.Module):
 
 def get_resnet50_model():
     model = ResNet()
-    print("ResNet-50 model created.")
     # model = models.resnet50(weights= None, num_classes=10)
     # TODO: check if we need to modify the first conv layer and maxpool for CIFAR10
     # since it's recommended to get better resutls.
