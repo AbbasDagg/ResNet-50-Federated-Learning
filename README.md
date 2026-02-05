@@ -128,7 +128,7 @@ server:
 
 
 ## arcuticture:
-# TODO descripe flow
+# TODO describe flow
 ### Data Distribution
 
 The data is automatically split and distributed across clients using the `split_data.py` script. The splitting process:
