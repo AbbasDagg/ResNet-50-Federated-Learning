@@ -4,12 +4,12 @@ from server import get_test_loader, evaluate_global_model
 from schema.fl_config import FLConfig, aggregation_methods
 from pydantic import ValidationError
 import yaml
-from nvflare.app_opt.pt.job_config.fed_avg import FedAvgJob
 from nvflare.job_config.script_runner import ScriptRunner
 import os
 import argparse
 import torch
 from datetime import datetime
+import json
 
 
 def federated_learning_arg_parser() -> argparse.Namespace:
@@ -37,6 +37,7 @@ def load_fl_config(config_path: Path) -> FLConfig:
 
 
 def get_run_path(workspace_path: str, config_path: str) -> str:
+    """Generate a unique run path based on the current date and config name."""
     date_name = datetime.now().strftime("%Y%m%d_%H%M")
     config_name = os.path.splitext(os.path.basename(config_path))[0]
     full_path = os.path.join(workspace_path, f"{config_name}_{date_name}")
@@ -47,7 +48,6 @@ def get_run_path(workspace_path: str, config_path: str) -> str:
 def runner():
     print("Starting Federated Learning Job...")
     fl_args = federated_learning_arg_parser()
-
     fl_config = load_fl_config(fl_args.config)
 
     server_config = fl_config.server
@@ -65,6 +65,8 @@ def runner():
         os.makedirs(workspace_path)
 
     run_path = get_run_path(workspace_path, fl_args.config)
+    print(f"Run path created at: {run_path}")
+
     # Server evaluation setup
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     test_loader = get_test_loader(data_path)
@@ -92,7 +94,17 @@ def runner():
         print(f"Adding client {client_id}")
         executor = ScriptRunner(
             script=train_script,
-            script_args=f"--client_id site-{i+1} --num_clients {n_clients} --lr {client_config.lr} --batch_size {client_config.batch_size} --epochs {client_config.epochs} --workspace_path {run_path} --data_path {data_path}",
+            script_args=(
+                f"--client_id site-{i+1} "
+                f"--num_clients {n_clients} "
+                f"--lr {client_config.lr} "
+                f"--lr_min {client_config.lr_min} "
+                f"--batch_size {client_config.batch_size} "
+                f"--epochs {client_config.epochs} "
+                f"--use_lr_scheduler {str(client_config.use_lr_scheduler)} "
+                f"--workspace_path {run_path} "
+                f"--data_path {data_path}"
+            ),
         )
         job.to(executor, f"site-{i + 1}")
 
@@ -119,6 +131,11 @@ def runner():
     else:
         print("Final model not found at expected path")
     print("=" * 60)
+
+    # Save config used for this run
+    with open(os.path.join(run_path, "used_fl_config.json"), "w") as f:
+        json.dump(fl_config.model_dump(), f, indent=2)
+    print(f"FL config saved to {os.path.join(run_path, 'used_fl_config.json')}")
 
 
 if __name__ == "__main__":
