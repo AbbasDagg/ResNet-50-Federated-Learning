@@ -47,6 +47,12 @@ tensorboard --logdir=workspace/server_client_default_20260125_1617/tensorboard_l
 ```
 
 
+When you open TensorBoard, you will see something like this:
+
+<img src="results/tensorBoardFull.png" width="900">
+
+Then, pick the site you want to view the metrics with and you are good to go. Moreover, you can pick multiple sites to compare with by enabling the checkboxes of the wanted sites.
+
 ## Config
 
 Our federated learning system is configured using one YAML file. The configuration controls server-side aggregation settings and client-side training parameters making.
@@ -138,6 +144,60 @@ The data is automatically split and distributed across clients using the `split_
 - The test set (10,000 samples) is shared for evaluation
 
 ## Results:
+In our run we were able to get to 90% accuracy and here are the training metrics and results:
+
+### Global Model Performance
+
+**Global Model Accuracy:**  
+
+<img src="results/global_model_acc.png" width="500">
+
+
+**Global Model Loss:**  
+
+<img src="results/global_model_loss.png" width="500">
+
+### Site-1 Local Training Results
+
+**Site-1 Local Accuracy:**  
+
+<img src="results/site_1_local_acc.png" width="500">
+
+
+**Site-1 Training Loss:**  
+
+<img src="results/site_1_training_loss.png" width="500">
+
+**Site-1 Test Loss:**  
+
+<img src="results/site_1_test_loss.png" width="500">
+
+
+### Site-1 Class-wise Accuracy
+
+| Class 0 | Class 1 | Class 2 |
+|---------|---------|---------|
+| <img src="results/site_1_acc_class0.png" width="400"> | <img src="results/site_1_acc_class1.png" width="400"> | <img src="results/site_1_acc_class2.png" width="400"> |
+
+| Class 3 | Class 4 | Class 5 |
+|---------|---------|---------|
+| <img src="results/site_1_acc_class3.png" width="400"> | <img src="results/site_1_acc_class4.png" width="400"> | <img src="results/site_1_acc_class5.png" width="400"> |
+
+| Class 6 | Class 7 | Class 8 |
+|---------|---------|---------|
+| <img src="results/site_1_acc_class6.png" width="400"> | <img src="results/site_1_acc_class7.png" width="400"> | <img src="results/site_1_acc_class8.png" width="400"> |
+
+| Class 9 |
+|---------|
+| <div style="text-align: center;"><img src="results/site_1_acc_class9.png" width="900"></div> |
+
+
+### Visualise the full results of the run:
+To see the full resutls for all of the sites with all of the metrics run the following:
+
+```bash
+tensorboard --logdir=results/tensorboard_logs/ --bind_all
+```
 
 ## Contributors:
 **Sami Serhan** - samii.serhan@gmail.com
