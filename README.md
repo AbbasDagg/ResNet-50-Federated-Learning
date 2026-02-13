@@ -5,13 +5,20 @@ This repo deals with federating learning training for resnet50 on [CIFAR-10](htt
 
 ## Setup(wsl)
 pre requirements:
-- wsl (official installation stepscould be found here)
+- wsl (official installation stepscould be found [here](https://learn.microsoft.com/en-us/windows/wsl/install))
 
 If you are running using a gpu install cuda on your wsl machine the official steps could be found [here](https://developer.nvidia.com/cuda-13-0-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_local) Note: check if 13.0 is supported for your gpu.  
 Next clone the repo using:
 ```bash
 git clone git@github.com:AbbasDagg/ResNet-50-Federated-Learning.git
 ```
+
+Create virtual environment:
+```bash
+python3.12 -m venv myenv
+source myenv/bin/activate
+```
+
 then install the requirements using:
 ```bash
 pip install -r requirements.txt
@@ -46,16 +53,15 @@ Then open your browser and navigate to `http://localhost:6006` to visualize trai
 tensorboard --logdir=workspace/server_client_default_20260125_1617/tensorboard_logs/ --bind_all
 ```
 
-
-When you open TensorBoard, you will see something like this:
+When you open TensorBoard, you will see the following page:
 
 <img src="results/tensorBoardFull.png" width="900">
 
-Then, pick the site you want to view the metrics with and you are good to go. Moreover, you can pick multiple sites to compare with by enabling the checkboxes of the wanted sites.
+Pick the site you want to view the metrics with and you are good to go. Moreover, you can pick multiple sites to compare with by enabling the checkboxes of the wanted sites.
 
 ## Config
 
-Our federated learning system is configured using one YAML file. The configuration controls server-side aggregation settings and client-side training parameters making.
+Our federated learning system is configured using one YAML file. The configuration controls server-side aggregation settings and client-side training parameters.
 This configuration make it easier to run the federated learning runs with different parameters.
 
 ### Configuration Structure
@@ -134,14 +140,25 @@ server:
 
 
 ## arcuticture:
-# TODO describe flow
+
+<img src="results/fl-diagram.png" width="900">
+
 ### Data Distribution
 
-The data is automatically split and distributed across clients using the `split_data.py` script. The splitting process:
+The data is automatically split and distributed across clients using the [split_data.py](federated_learning/split_data.py) script. The splitting process:
 - Splits CIFAR-10 training data (50,000 samples) equally among clients
 - Ensures deterministic distribution by class labels
 - Each client receives a balanced subset of all 10 classes
 - The test set (10,000 samples) is shared for evaluation
+
+### Server
+
+The server-side implementation consists of creating Controllers, which define server-side aggregation workflow and the interaction logic with clients. In out training we
+
+In the server we use the gotten configs to setup the clients runners `ScriptRunner` each client will recieve the associated values from the config using `script_args`.
+
+### client
+
 
 ## Results:
 In our run we were able to get to 90% accuracy and here are the training metrics and results:
