@@ -1,13 +1,13 @@
 # ResNet-50-Federated-Learning
 
 ## Overview
-This repo deals with federating learning training for resnet50 on [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) dataset.  
+This repo deals with federated learning training for ResNet-50 on [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html) dataset.  
 
-## Setup(wsl)
-pre requirements:
-- wsl (official installation stepscould be found [here](https://learn.microsoft.com/en-us/windows/wsl/install))
+## Setup (WSL)
+Prerequisites:
+- WSL (official installation steps could be found [here](https://learn.microsoft.com/en-us/windows/wsl/install))
 
-If you are running using a gpu install cuda on your wsl machine the official steps could be found [here](https://developer.nvidia.com/cuda-13-0-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_local) Note: check if 13.0 is supported for your gpu.  
+If you are running using a gpu install CUDA on your WSL machine the official steps could be found [here](https://developer.nvidia.com/cuda-13-0-0-download-archive?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_local) Note: check if 13.0 is supported for your gpu.  
 Next clone the repo using:
 ```bash
 git clone git@github.com:AbbasDagg/ResNet-50-Federated-Learning.git
@@ -23,7 +23,7 @@ then install the requirements using:
 ```bash
 pip install -r requirements.txt
 ```
-**Note** if you are running with cuda you may need to install torch with cuda, check the oficial [website](https://pytorch.org/get-started/locally/) for more info.
+**Note** if you are running with cuda you may need to install torch with cuda, check the official [website](https://pytorch.org/get-started/locally/) for more info.
 
 ## Running & Viewing Results
 
@@ -41,7 +41,7 @@ python federated_learning/fl_job.py --config runs/custom_config.yaml
 
 ### Monitoring Training Progress
 
-View raining metrics using TensorBoard:
+View training metrics using TensorBoard:
 ```bash
 tensorboard --logdir=<run_path>/tensorboard_logs/ --bind_all
 ```
@@ -139,7 +139,7 @@ server:
 ```
 
 
-## arcuticture:
+## Architecture:
 
 <img src="results/fl-diagram.png" width="900">
 
@@ -153,12 +153,26 @@ The data is automatically split and distributed across clients using the [split_
 
 ### Server
 
-The server-side implementation consists of creating Controllers, which define server-side aggregation workflow and the interaction logic with clients. In out training we
+The server-side implementation consists of creating Controllers, which define server-side aggregation workflow and the interaction logic with clients.  
+**Aggregation** defines how the server will deal with the clients returned results (e.g: weights).
 
-In the server we use the gotten configs to setup the clients runners `ScriptRunner` each client will recieve the associated values from the config using `script_args`.
+Next we assign executors (`training script`) for each client. For running the server we have two options:
+1. Using FL Simulator nvidia flare `job.simulator_run` method that simulates the federated training process on one computer.  
+2. Export it to a local folder `job.export_job` and run it later using `PoC` TODO `Abbas` add the option in the config to run with poc.
 
-### client
+### Client
+Clients implement Executors which handle the training logic that happens locally on each client site. 
 
+Our training process:
+- Get the data: `get_client_data_loader(client_id: str, num_clients: int)` takes the client id and number of clients and return the appropriate data slice for the given client id - different clients gets different data splits so we simulate the real world scenario of different private dataset per client.
+
+- Define used parameters (learning rate, Model, loss function, batch size, epochs, optimizer, scheduler).
+
+-  Import NVIDIA FLARE and initialize it `flare.init()` -> get the global model to perform training on `flare.receive()`
+
+- Perform training using the recieved values (lr, batch size, epochs) and log the metrics training loss, test loss, test accuracy and test accuracy per class - we have 10 classes in CIFAR 10 this is useful to tell which class is the less likely to be identified per site (nice to have), Moreover test loss and accuracy can tell us that we are not doing overfitting for the data.
+
+- Lastly send the trained model back to server `flare.send(output_model)` along with the global model accuracy so we can later select the best model based on the accuracy at the end of the training.
 
 ## Results:
 In our run we were able to get to 90% accuracy and here are the training metrics and results:
@@ -176,11 +190,6 @@ In our run we were able to get to 90% accuracy and here are the training metrics
 
 ### Site-1 Local Training Results
 
-**Site-1 Local Accuracy:**  
-
-<img src="results/site_1_local_acc.png" width="500">
-
-
 **Site-1 Training Loss:**  
 
 <img src="results/site_1_training_loss.png" width="500">
@@ -189,6 +198,9 @@ In our run we were able to get to 90% accuracy and here are the training metrics
 
 <img src="results/site_1_test_loss.png" width="500">
 
+**Site-1 test Accuracy:**  
+
+<img src="results/site_1_local_acc.png" width="500">
 
 ### Site-1 Class-wise Accuracy
 
@@ -209,8 +221,8 @@ In our run we were able to get to 90% accuracy and here are the training metrics
 | <div style="text-align: center;"><img src="results/site_1_acc_class9.png" width="900"></div> |
 
 
-### Visualise the full results of the run:
-To see the full resutls for all of the sites with all of the metrics run the following:
+### Visualize the full results of the run:
+To see the full results for all of the sites with all of the metrics run the following:
 
 ```bash
 tensorboard --logdir=results/tensorboard_logs/ --bind_all
