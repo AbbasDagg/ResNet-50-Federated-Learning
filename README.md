@@ -228,6 +228,47 @@ To see the full results for all of the sites with all of the metrics run the fol
 tensorboard --logdir=results/tensorboard_logs/ --bind_all
 ```
 
+### Config used:
+```json
+{
+  "server": {
+    "num_rounds": 10,
+    "aggregation_method": "fedavg",
+    "clients": {
+      "client_1": {
+        "lr": 0.03,
+        "epochs": 6,
+        "batch_size": 64,
+        "use_lr_scheduler": true,
+        "lr_min": 0.001
+      },
+      "client_2": {
+        "lr": 0.03,
+        "epochs": 6,
+        "batch_size": 64,
+        "use_lr_scheduler": true,
+        "lr_min": 0.001
+      },
+      "client_3": {
+        "lr": 0.03,
+        "epochs": 6,
+        "batch_size": 64,
+        "use_lr_scheduler": true,
+        "lr_min": 0.001
+      },
+      "client_4": {
+        "lr": 0.03,
+        "epochs": 6,
+        "batch_size": 64,
+        "use_lr_scheduler": true,
+        "lr_min": 0.001
+      }
+    }
+  }
+}
+```
+
+
 ## Contributors:
 **Sami Serhan** - samii.serhan@gmail.com
 **Abbas Ismail** - abbasismail172@gmail.com
