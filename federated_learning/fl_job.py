@@ -122,9 +122,9 @@ def runner():
         print("  3. Clean with: nvflare poc clean")
         print("="*60)
         return
-    else:
-        print("\nRunning in Simulator Mode...")
-        job.simulator_run(workspace=run_path)
+    
+    print("\nRunning in Simulator Mode...")
+    job.simulator_run(workspace=run_path)
 
     # Evaluate final global model after training
     print("\n" + "=" * 60)
