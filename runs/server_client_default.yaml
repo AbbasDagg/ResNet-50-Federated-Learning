@@ -1,6 +1,7 @@
 server:
   num_rounds: 100
   aggregation_method: "fedavg"
+  poc_mode: false
   clients:
     client_1: {}
     client_2: {}

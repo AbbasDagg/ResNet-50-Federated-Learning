@@ -17,6 +17,7 @@ class Server(BaseModel):
     num_rounds: int
     aggregation_method: str = "fedavg"
     clients: Dict[str, Client]
+    poc_mode: bool = False
 
     @field_validator("aggregation_method")
     @classmethod
