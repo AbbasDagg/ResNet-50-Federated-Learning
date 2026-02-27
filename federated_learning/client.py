@@ -1,3 +1,4 @@
+import warnings
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -165,7 +166,10 @@ def run_client(args: argparse.Namespace) -> None:
                 eta_min=lr_min,
             )
             if input_model.current_round > 0:
-                scheduler.step()
+                # Ignore warnings about order, we do per round not per epoch.
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", UserWarning)
+                    scheduler.step()
             print_client_message(
                 client_id, f"Current lr: {optimizer.param_groups[0]['lr']:.6f}"
             )

@@ -109,6 +109,21 @@ def runner():
         job.to(executor, f"site-{i + 1}")
 
     print("job-config is at ", run_path)
+    
+    if server_config.poc_mode:
+        print("\n" + "="*60)
+        print("POC MODE: Exporting job for POC deployment")
+        print("="*60)
+        job.export_job(run_path)
+        print(f"\nJob exported to: {run_path}")
+        print("\nTo run in POC mode:")
+        print("  1. Submit job via admin console: submit_job ", run_path + "/fedavg")
+        print("  2. After completion, stop POC with: nvflare poc stop")
+        print("  3. Clean with: nvflare poc clean")
+        print("="*60)
+        return
+    
+    print("\nRunning in Simulator Mode...")
     job.simulator_run(workspace=run_path)
 
     # Evaluate final global model after training
