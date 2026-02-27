@@ -146,10 +146,10 @@ server:
 ### Data Distribution
 
 The data is automatically split and distributed across clients using the [split_data.py](federated_learning/split_data.py) script. The splitting process:
-- Splits CIFAR-10 training data (50,000 samples) equally among clients
-- Ensures deterministic distribution by class labels
-- Each client receives a balanced subset of all 10 classes
-- The test set (10,000 samples) is shared for evaluation
+- Splits CIFAR-10 training data (50,000 samples) equally among clients.
+- Ensures deterministic distribution by class labels so each run we get the same results.
+- Each client receives a balanced subset of all 10 classes.
+- The test set (10,000 samples) is shared for evaluation between all of the clients.
 
 ### Server
 
@@ -159,6 +159,8 @@ The server-side implementation consists of creating Controllers, which define se
 Next we assign executors (`training script`) for each client. For running the server we have two options:
 1. Using FL Simulator nvidia flare `job.simulator_run` method that simulates the federated training process on one computer.  
 2. Export it to a local folder `job.export_job` and run it later using `PoC` TODO `Abbas` add the option in the config to run with poc.
+
+**You can find the server code [here](federated_learning/fl_job.py)**  
 
 ### Client
 Clients implement Executors which handle the training logic that happens locally on each client site. 
@@ -174,8 +176,50 @@ Our training process:
 
 - Lastly send the trained model back to server `flare.send(output_model)` along with the global model accuracy so we can later select the best model based on the accuracy at the end of the training.
 
+**You can find the client/training code [here](federated_learning/client.py)**  
+
 ## Results:
-In our run we were able to get to 90% accuracy and here are the training metrics and results:
+In our run we were able to get to 90% with 4 clients using the following parameters which we found to be best in our case:
+```json
+{
+  "server": {
+    "num_rounds": 100,
+    "aggregation_method": "fedavg",
+    "clients": {
+      "client_1": {
+        "lr": 0.03,
+        "epochs": 6,
+        "batch_size": 64,
+        "use_lr_scheduler": true,
+        "lr_min": 0.001
+      },
+      "client_2": {
+        "lr": 0.03,
+        "epochs": 6,
+        "batch_size": 64,
+        "use_lr_scheduler": true,
+        "lr_min": 0.001
+      },
+      "client_3": {
+        "lr": 0.03,
+        "epochs": 6,
+        "batch_size": 64,
+        "use_lr_scheduler": true,
+        "lr_min": 0.001
+      },
+      "client_4": {
+        "lr": 0.03,
+        "epochs": 6,
+        "batch_size": 64,
+        "use_lr_scheduler": true,
+        "lr_min": 0.001
+      }
+    }
+  }
+}
+```
+
+and here are the training metrics and results:
 
 ### Global Model Performance
 
@@ -270,5 +314,5 @@ tensorboard --logdir=results/tensorboard_logs/ --bind_all
 
 
 ## Contributors:
-**Sami Serhan** - samii.serhan@gmail.com
+**Sami Serhan** - samii.serhan@gmail.com  
 **Abbas Ismail** - abbasismail172@gmail.com
