@@ -179,47 +179,7 @@ Our training process:
 **You can find the client/training code [here](federated_learning/client.py)**  
 
 ## Results:
-In our run we were able to get to 90% with 4 clients using the following parameters which we found to be best in our case:
-```json
-{
-  "server": {
-    "num_rounds": 100,
-    "aggregation_method": "fedavg",
-    "clients": {
-      "client_1": {
-        "lr": 0.03,
-        "epochs": 6,
-        "batch_size": 64,
-        "use_lr_scheduler": true,
-        "lr_min": 0.001
-      },
-      "client_2": {
-        "lr": 0.03,
-        "epochs": 6,
-        "batch_size": 64,
-        "use_lr_scheduler": true,
-        "lr_min": 0.001
-      },
-      "client_3": {
-        "lr": 0.03,
-        "epochs": 6,
-        "batch_size": 64,
-        "use_lr_scheduler": true,
-        "lr_min": 0.001
-      },
-      "client_4": {
-        "lr": 0.03,
-        "epochs": 6,
-        "batch_size": 64,
-        "use_lr_scheduler": true,
-        "lr_min": 0.001
-      }
-    }
-  }
-}
-```
-
-and here are the training metrics and results:
+In our run we were able to get to 90% with 4 clients and here are the training metrics and results:
 
 ### Global Model Performance
 
