@@ -59,6 +59,7 @@ There are two runnning modes:
   - Start one wsl terminal for poc logs, run:
     ```bash
     nvflare poc prepare -n <cli_num>
+    nvflare poc prepare-jobs-dir -j <run_path>
     nvflare poc start -ex admin@nvidia.com
     ```
   
@@ -69,7 +70,7 @@ There are two runnning modes:
 
   - In admin terminal, submit job with:
     ```bash
-    submit_job <job_path>
+    submit_job fedavg
     ```
     
   - After finishing, stop POC and clean with:
@@ -317,4 +318,5 @@ tensorboard --logdir=results/tensorboard_logs/ --bind_all
 ## Contributors:
 **Sami Serhan** - samii.serhan@gmail.com  
 **Abbas Ismail** - abbasismail172@gmail.com
+
 
