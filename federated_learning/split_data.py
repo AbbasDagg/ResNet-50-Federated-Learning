@@ -6,7 +6,9 @@ from torch.utils.data import DataLoader, Subset
 import numpy as np
 
 
-def split_cifar10_data(data_path: str, num_clients: int = 4):
+def split_cifar10_data(
+    data_path: str, num_clients: int = 4, batch_size: int = 64
+) -> tuple[list[DataLoader], DataLoader]:
     """Splits CIFAR-10 data among a specified number of clients deterministically.
 
     Args:
@@ -54,18 +56,18 @@ def split_cifar10_data(data_path: str, num_clients: int = 4):
     client_loaders = []
     for indices in client_indices:
         subset = Subset(train_dataset, indices)
-        loader = DataLoader(subset, batch_size=64, shuffle=True)
+        loader = DataLoader(subset, batch_size=batch_size, shuffle=True)
         client_loaders.append(loader)
 
-    test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     return client_loaders, test_loader
 
 
 def get_client_data_loader(
-    client_id: str, num_clients: int, data_path: str
+    client_id: str, batch_size: int, num_clients: int, data_path: str
 ) -> tuple[DataLoader, DataLoader]:
     client_loaders, test_loader = split_cifar10_data(
-        data_path=data_path, num_clients=num_clients
+        data_path=data_path, num_clients=num_clients, batch_size=batch_size
     )
     indx = int(re.search(r"site-(\d+)", client_id).group(1)) - 1
     return client_loaders[indx], test_loader

@@ -70,11 +70,12 @@ def run_client(args: argparse.Namespace) -> None:
     client_id = args.client_id
     lr_min = args.lr_min
     use_lr_scheduler = True if args.use_lr_scheduler.lower() == "true" else False
+    batch_size = args.batch_size
 
     print_client_message(client_id, f"Client Started Using device: {DEVICE}")
 
     train_loader, test_loader = get_client_data_loader(
-        client_id, num_clients=args.num_clients, data_path=str(data_path)
+        client_id, batch_size, num_clients=args.num_clients, data_path=str(data_path)
     )
     print_client_message(client_id, "Data loaders obtained.")
     print_client_message(
