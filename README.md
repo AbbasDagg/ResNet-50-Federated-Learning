@@ -29,15 +29,54 @@ pip install -r requirements.txt
 
 ### Federated Learning Training
 
-To run the federated learning training with the default configuration:
-```bash
-python federated_learning/fl_job.py --config runs/server_client_default.yaml
-```
+There are two runnning modes:
+- Simulator mode:
 
-To run with a custom configuration:
-```bash
-python federated_learning/fl_job.py --config runs/custom_config.yaml
-```
+  To run the federated learning training with the default configuration:
+  ```bash
+  python federated_learning/fl_job.py --config runs/server_client_default.yaml
+  ```
+  
+  To run with a custom configuration:
+  ```bash
+  python federated_learning/fl_job.py --config runs/custom_config.yaml
+  ```
+
+- POC mode:
+
+  - Enable poc_mode = true in the config under: `runs/server_client_default.yaml`
+
+  - In wsl, run:
+    ```bash
+    python federated_learning/fl_job.py --config runs/server_client_default.yaml
+    ```
+    Or:
+    ```bash
+    python federated_learning/fl_job.py --config runs/custom_config.yaml
+    ```
+     Keep track of the printed job path.
+
+  - Start one wsl terminal for poc logs, run:
+    ```bash
+    nvflare poc prepare -n <cli_num>
+    nvflare poc start -ex admin@nvidia.com
+    ```
+  
+  - Start another wsl terminal for nvflare admin console, run:
+    ```bash
+    nvflare poc start -p admin@nvidia.com
+    ```
+
+  - In admin terminal, submit job with:
+    ```bash
+    submit_job <job_path>
+    ```
+    
+  - After finishing, stop POC and clean with:
+    ```bash
+    nvflare poc stop
+    nvflare poc clean
+    ```
 
 ### Monitoring Training Progress
 
@@ -76,6 +115,7 @@ The config file must contain:
 |-----------|------|-------------|
 | `num_rounds` | int | Number of federated learning training rounds |
 | `aggregation_method` | string | Method for aggregating client models (default: `fedavg`) |
+| `poc_mode` | bool | Enable or disable POC running mode (default: `false`) |
 
 **Supported Aggregation Methods:**
 - `fedavg` - Federated Averaging (default)
@@ -131,6 +171,7 @@ A default config will look like this (using defaults):
 server:
   num_rounds: 10
   aggregation_method: "fedavg"
+  poc_mode: false
   clients:
     client_1: {}
     client_2: {}
@@ -158,7 +199,7 @@ The server-side implementation consists of creating Controllers, which define se
 
 Next we assign executors (`training script`) for each client. For running the server we have two options:
 1. Using FL Simulator nvidia flare `job.simulator_run` method that simulates the federated training process on one computer.  
-2. Export it to a local folder `job.export_job` and run it later using `PoC` TODO `Abbas` add the option in the config to run with poc.
+2. Export it to a local folder `job.export_job` and run it later using `PoC` add the option in the config to run with poc.
 
 **You can find the server code [here](federated_learning/fl_job.py)**  
 
@@ -276,3 +317,4 @@ tensorboard --logdir=results/tensorboard_logs/ --bind_all
 ## Contributors:
 **Sami Serhan** - samii.serhan@gmail.com  
 **Abbas Ismail** - abbasismail172@gmail.com
+
