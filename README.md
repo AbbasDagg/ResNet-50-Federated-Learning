@@ -278,7 +278,7 @@ tensorboard --logdir=results/tensorboard_logs/ --bind_all
 ```json
 {
   "server": {
-    "num_rounds": 10,
+    "num_rounds": 100,
     "aggregation_method": "fedavg",
     "clients": {
       "client_1": {
@@ -318,5 +318,6 @@ tensorboard --logdir=results/tensorboard_logs/ --bind_all
 ## Contributors:
 **Sami Serhan** - samii.serhan@gmail.com  
 **Abbas Ismail** - abbasismail172@gmail.com
+
 
 
